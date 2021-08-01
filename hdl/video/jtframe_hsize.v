@@ -19,39 +19,38 @@
 // Applies horizontal scaling to an analogue signal
 
 module jtframe_hsize #( parameter
-    WCOL        =4,    // bits per colour
-    SCREEN_WIDTH=384   // screen pixel width (including blanking)
+    COLORW    =4,    // bits per colour
+    VIDEO_WIDTH=384   // screen pixel width (including blanking)
 ) (
-    input             clk,
-    input             pxl_cen,
-    input             pxl2_cen,
+    input              clk,
+    input              pxl_cen,
+    input              pxl2_cen,
 
-    input       [3:0] scale,
-    input       [4:0] offset,
-    input             enable,
+    input        [3:0] scale,
+    input        [4:0] offset,
+    input              enable,
 
-    input  [WCOL-1:0] r_in,
-    input  [WCOL-1:0] g_in,
-    input  [WCOL-1:0] b_in,
-    input             HS_in,
-    input             VS_in,
-    input             HB_in,
-    input             VB_in,
+    input [COLORW-1:0] r_in,
+    input [COLORW-1:0] g_in,
+    input [COLORW-1:0] b_in,
+    input              HS_in,
+    input              VS_in,
+    input              HB_in,
+    input              VB_in,
     // filtered video
     output reg            HS_out,
     output reg            VS_out,
     output reg            HB_out,
     output reg            VB_out,
-    output reg [WCOL-1:0] r_out,
-    output reg [WCOL-1:0] g_out,
-    output reg [WCOL-1:0] b_out
-
+    output reg [COLORW-1:0] r_out,
+    output reg [COLORW-1:0] g_out,
+    output reg [COLORW-1:0] b_out
 );
 
-localparam VW = SCREEN_WIDTH <= 256 ? 8 : (SCREEN_WIDTH <= 512 ? 9 : 10);
+localparam VW = VIDEO_WIDTH <= 256 ? 8 : (VIDEO_WIDTH <= 512 ? 9 : 10);
 localparam SW = 8;
 
-wire [WCOL*3-1:0] rgb_out, rgb_in;
+wire [COLORW*3-1:0] rgb_out, rgb_in;
 reg  [    VW-1:0] rdcnt, wrcnt;
 wire [    SW-2:0] summand;
 reg  [    SW-1:0] sum;
@@ -70,13 +69,15 @@ always @(posedge clk) if(pxl_cen) begin
     if( HS_in & ~HSl ) begin
         line  <= ~line;
         wrcnt <= 0;
-    end else if(wrcnt!=SCREEN_WIDTH-1) begin
+    end else if(wrcnt!=VIDEO_WIDTH-1) begin
         wrcnt <= wrcnt + 1'd1;
     end
 
     {r_out,g_out,b_out} <= enable ? (over || !passz ? 0 : rgb_out) : rgb_in;
     HS_out <= HS_in;
-    VS_out <= VS_in;
+    VS_out <= VS_in; // although there is a 1-line offset, I don't adjust for
+                     // it here, as the user will likely adjust H/S offset anyway
+                     // and the 1-line offset doesn't apply if enable is low
     HB_out <= HB_in; // not accurate when scaling is enabled
     VB_out <= VB_in;
 end
@@ -92,7 +93,7 @@ always @(posedge clk) if(pxl2_cen) begin
         sum  <= next_sum;
         if( sum[SW-1] != next_sum[SW-1] && !over ) begin
             if( rdcnt==0 ) passz <= 1;
-            if( rdcnt == SCREEN_WIDTH-1 && passz ) begin
+            if( rdcnt == VIDEO_WIDTH-1 && passz ) begin
                 over <= 1;
             end else begin
                 rdcnt <= rdcnt + 1'd1;
@@ -101,7 +102,7 @@ always @(posedge clk) if(pxl2_cen) begin
     end
 end
 
-jtframe_dual_ram #(.dw(WCOL*3), .aw(VW+1)) u_line(
+jtframe_dual_ram #(.dw(COLORW*3), .aw(VW+1)) u_line(
     .clk0   ( clk       ),
     .clk1   ( clk       ),
     // Port 0: writes
