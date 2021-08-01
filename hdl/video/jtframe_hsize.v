@@ -58,7 +58,7 @@ wire       we;
 wire [5:0] next_sum;
 
 assign rgb_in   = {r_in, g_in, b_in};
-assign we       = pxl_cen & ~HB_in;
+assign we       = pxl_cen;
 assign next_sum = sum + {1'b0, summand};
 
 always @(posedge clk) if(pxl_cen) begin
@@ -66,8 +66,9 @@ always @(posedge clk) if(pxl_cen) begin
     if( HS_in & ~HSl ) begin
         line  <= ~line;
         wrcnt <= 0;
+    end else if(wrcnt!=SCREEN_WIDTH-1) begin
+        wrcnt <= wrcnt + 1'd1;
     end
-    if( !HB_in ) wrcnt <= wrcnt + 1'd1;
 
     {r_out,g_out,b_out} <= enable ? (over || !passz ? 0 : rgb_out) : rgb_in;
     HS_out <= HS_in;
@@ -77,19 +78,23 @@ always @(posedge clk) if(pxl_cen) begin
 end
 
 always @(posedge clk) if(pxl2_cen) begin
+    suml <= sum[5];
     if( HS_in & ~HSl ) begin
         rdcnt <= { {VW-5{offset[4]}}, offset };
         sum   <= 0;
         over  <= 0;
         passz <= 0; // passed zero, used to avoid setting "over" wrong
                     // when using negative offsets
-    end
-    suml <= sum[5];
-    sum  <= next_sum;
-    if( suml != next_sum[5] && !over ) begin
-        rdcnt <= rdcnt + 1'd1;
-        if( rdcnt==0 ) passz <= 1;
-        if( rdcnt == SCREEN_WIDTH-1 && passz ) over <= 1;
+    end else begin
+        sum  <= next_sum;
+        if( sum[5] != next_sum[5] && !over ) begin
+            if( rdcnt==0 ) passz <= 1;
+            if( rdcnt == SCREEN_WIDTH-1 && passz ) begin
+                over <= 1;
+            end else begin
+                rdcnt <= rdcnt + 1'd1;
+            end
+        end
     end
 end
 
