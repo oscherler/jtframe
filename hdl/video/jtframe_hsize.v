@@ -16,6 +16,8 @@
     Version: 1.0
     Date: 1-8-2021 */
 
+// Applies horizontal scaling to an analogue signal
+
 module jtframe_hsize #( parameter
     WCOL        =4,    // bits per colour
     SCREEN_WIDTH=384   // screen pixel width (including blanking)
@@ -47,19 +49,21 @@ module jtframe_hsize #( parameter
 );
 
 localparam VW = SCREEN_WIDTH <= 256 ? 8 : (SCREEN_WIDTH <= 512 ? 9 : 10);
+localparam SW = 8;
 
 wire [WCOL*3-1:0] rgb_out, rgb_in;
 reg  [    VW-1:0] rdcnt, wrcnt;
-reg  [       4:0] summand;
-reg  [       5:0] sum;
+wire [    SW-2:0] summand;
+reg  [    SW-1:0] sum;
 
-reg        line=0, suml, over, passz, HSl;
+reg        line=0, over, passz, HSl;
 wire       we;
-wire [5:0] next_sum;
+wire [SW-1:0] next_sum;
 
 assign rgb_in   = {r_in, g_in, b_in};
 assign we       = pxl_cen;
 assign next_sum = sum + {1'b0, summand};
+assign summand = { scale[3], {SW-5{~scale[3]}}, scale[2:0] };
 
 always @(posedge clk) if(pxl_cen) begin
     HSl <= HS_in;
@@ -78,7 +82,6 @@ always @(posedge clk) if(pxl_cen) begin
 end
 
 always @(posedge clk) if(pxl2_cen) begin
-    suml <= sum[5];
     if( HS_in & ~HSl ) begin
         rdcnt <= { {VW-5{offset[4]}}, offset };
         sum   <= 0;
@@ -87,7 +90,7 @@ always @(posedge clk) if(pxl2_cen) begin
                     // when using negative offsets
     end else begin
         sum  <= next_sum;
-        if( sum[5] != next_sum[5] && !over ) begin
+        if( sum[SW-1] != next_sum[SW-1] && !over ) begin
             if( rdcnt==0 ) passz <= 1;
             if( rdcnt == SCREEN_WIDTH-1 && passz ) begin
                 over <= 1;
@@ -96,27 +99,6 @@ always @(posedge clk) if(pxl2_cen) begin
             end
         end
     end
-end
-
-always @(*) begin
-    case( scale )
-        0: summand = 5'b0_0001;
-        1: summand = 5'b0_0011;
-        2: summand = 5'b0_0101;
-        3: summand = 5'b0_0111;
-        4: summand = 5'b0_1001;
-        5: summand = 5'b0_1011;
-        6: summand = 5'b0_1101;
-        7: summand = 5'b0_1111;
-        8: summand = 5'b1_0000; // 1:1
-        9: summand = 5'b1_0001;
-       10: summand = 5'b1_0010;
-       11: summand = 5'b1_0011;
-       12: summand = 5'b1_0100;
-       13: summand = 5'b1_0101;
-       14: summand = 5'b1_0110;
-       15: summand = 5'b1_0111;
-    endcase // scale
 end
 
 jtframe_dual_ram #(.dw(WCOL*3), .aw(VW+1)) u_line(
