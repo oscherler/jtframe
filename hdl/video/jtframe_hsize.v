@@ -19,8 +19,8 @@
 // Applies horizontal scaling to an analogue signal
 
 module jtframe_hsize #( parameter
-    COLORW    =4,    // bits per colour
-    VIDEO_WIDTH=384   // screen pixel width (including blanking)
+    COLORW     =4     // bits per colour
+    //VIDEO_WIDTH=256   // screen pixel width (excluding blanking)
 ) (
     input              clk,
     input              pxl_cen,
@@ -47,39 +47,65 @@ module jtframe_hsize #( parameter
     output reg [COLORW-1:0] b_out
 );
 
-localparam VW = VIDEO_WIDTH <= 256 ? 8 : (VIDEO_WIDTH <= 512 ? 9 : 10);
+//localparam VW = VIDEO_WIDTH <= 256 ? 9 : (VIDEO_WIDTH <= 512 ? 9 : 10);
+localparam VW = 9; // Max 512 pixels including blanking
 localparam SW = 8;
 
 wire [COLORW*3-1:0] rgb_out, rgb_in;
 reg  [    VW-1:0] rdcnt, wrcnt;
 wire [    SW-2:0] summand;
 reg  [    SW-1:0] sum;
+reg  [    VW-1:0] hmax, hb0, hb1;
 
-reg        line=0, over, passz, HSl;
-wire       we;
+reg  line=0, over, passz, overl;
+reg  VSl, HSl, HBl, HBll, VBl, VBll;
+wire we;
 wire [SW-1:0] next_sum;
 
 assign rgb_in   = {r_in, g_in, b_in};
 assign we       = pxl_cen;
 assign next_sum = sum + {1'b0, summand};
-assign summand = { scale[3], {SW-5{~scale[3]}}, scale[2:0] };
+assign summand  = { ~scale[3], {SW-5{scale[3]}}, scale[2:0] };
 
 always @(posedge clk) if(pxl_cen) begin
-    HSl <= HS_in;
+    HSl   <= HS_in;
+    HBl   <= HB_in;
+    HBll  <= HBl;
+    overl <= over;
+
+    // VB must be adjusted to prevent the bottom line from being washed out
+    if( HB_in & ~HBl ) begin
+        { VBll, VBl } <= { VBl, VB_in };
+    end
+
     if( HS_in & ~HSl ) begin
         line  <= ~line;
         wrcnt <= 0;
-    end else if(wrcnt!=VIDEO_WIDTH-1) begin
+        hmax  <= wrcnt;
+        VSl   <= VS_in;
+        if( enable ) VS_out <= VSl;
+    end else begin
         wrcnt <= wrcnt + 1'd1;
     end
+    // Register when HB toggles
+    if(  HBl & ~HBll ) hb1 <= wrcnt;
+    if( ~HBl &  HBll ) hb0 <= wrcnt;
 
-    {r_out,g_out,b_out} <= enable ? (over || !passz ? 0 : rgb_out) : rgb_in;
     HS_out <= HS_in;
-    VS_out <= VS_in; // although there is a 1-line offset, I don't adjust for
-                     // it here, as the user will likely adjust H/S offset anyway
-                     // and the 1-line offset doesn't apply if enable is low
-    HB_out <= HB_in; // not accurate when scaling is enabled
-    VB_out <= VB_in;
+    if( enable ) begin
+        if(  HB_out && rdcnt==hb0 ) HB_out <= 0;
+        if( !HB_out && rdcnt==hb1 ) begin
+            HB_out <= 1;
+            if( enable ) VB_out <= VBll;
+        end
+    end else begin
+        HB_out <= HB_in;
+        VB_out <= VB_in;
+        VS_out <= VS_in;
+    end
+
+    // colour output
+    {r_out,g_out,b_out} <= enable ? (overl || !passz ? 0 : rgb_out) : rgb_in;
 end
 
 always @(posedge clk) if(pxl2_cen) begin
@@ -93,7 +119,7 @@ always @(posedge clk) if(pxl2_cen) begin
         sum  <= next_sum;
         if( sum[SW-1] != next_sum[SW-1] && !over ) begin
             if( rdcnt==0 ) passz <= 1;
-            if( rdcnt == VIDEO_WIDTH-1 && passz ) begin
+            if( rdcnt == hmax && passz ) begin
                 over <= 1;
             end else begin
                 rdcnt <= rdcnt + 1'd1;

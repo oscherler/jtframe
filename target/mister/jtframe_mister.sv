@@ -250,7 +250,7 @@ jtframe_resync u_resync(
 wire [15:0] status_menumask;
 
 assign status_menumask[15:3] = 0,
-       status_menumask[2]    = hsize_enable,
+       status_menumask[2]    = ~hsize_enable,
        status_menumask[1]    = ~core_mod[0],
        status_menumask[0]    = direct_video;
 
@@ -374,8 +374,8 @@ hps_io #( .STRLEN(0), .PS2DIV(32), .WIDE(JTFRAME_MR_FASTIO) ) u_hps_io
 );
 
 // scales base video horizontally
-jtframe_hsize #(.COLORW(COLORW),.VIDEO_WIDTH(VIDEO_WIDTH)) u_hsize(
-    .clk        ( clk       ),
+jtframe_hsize #(.COLORW(COLORW)) u_hsize(
+    .clk        ( clk_sys   ),
     .pxl_cen    ( pxl_cen   ),
     .pxl2_cen   ( pxl2_cen  ),
 
