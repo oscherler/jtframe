@@ -61,14 +61,17 @@ module jtframe_68kdtack
     input [W-1:0] den,  // denominator
 
     output reg    DTACKn,
-    output reg [15:0] fave // average cpu_cen frequency in kHz
+    output reg [15:0] fave, // average cpu_cen frequency in kHz
+    output reg [15:0] fworst, // average cpu_cen frequency in kHz
+    input             frst
 );
 
 localparam CW=W+WD;
 
 reg signed [CW-1:0] cencnt=0;
-reg wait1, halt;
-wire over = cencnt>(den-num)>>1 && !cencnt[CW-1];
+reg wait1, halt, aux;
+wire over = cencnt>(den-num)>>1 && !cencnt[CW-1]
+            && !cpu_cen && !aux && (!halt || RECOVERY==0);
 reg  DSnl;
 wire DSn_posedge = &DSn & ~DSnl;
 
@@ -76,8 +79,8 @@ wire DSn_posedge = &DSn & ~DSnl;
 real rnum = num;
 real rden = den;
 initial begin
-    if( rnum/rden<=3 ) begin
-        $display("Error: num/den must be 3 or more, otherwise recovery won't work (%m)");
+    if( rnum/rden<=4 ) begin
+        $display("Error: num/den must be 4 or more, otherwise recovery won't work (%m)");
         $finish;
     end
 end
@@ -96,7 +99,7 @@ always @(posedge clk, posedge rst) begin : dtack_gen
             halt   <= 0;
         end else if( !ASn ) begin
             if( cpu_cen  ) wait1 <= 0;
-            if( !wait1 ) begin
+            if( !wait1 || cpu_cen ) begin
                 if( !bus_cs || (bus_cs && !bus_busy) ) begin
                     DTACKn <= 0;
                     halt <= 0;
@@ -109,18 +112,20 @@ always @(posedge clk, posedge rst) begin : dtack_gen
 end
 
 always @(posedge clk) begin
-    cencnt  <= (over && !cpu_cen && (!halt || RECOVERY==0)) ? (cencnt+num-den) : (cencnt+num);
+    cencnt  <= over ? (cencnt+num-den) : (cencnt+num);
     if( halt ) begin
         cpu_cen  <= 0;
         cpu_cenb <= 0;
     end else begin
         cpu_cen <= over ? ~cpu_cen : 0;
-        cpu_cenb<= cpu_cen;
+        aux <= cpu_cen;
+        cpu_cenb<= aux;
     end
 end
 
 // Frequency reporting
 reg [15:0] freq_cnt=0, fout_cnt;
+initial fworst = 16'hffff;
 
 always @(posedge clk) begin
     freq_cnt <= freq_cnt + 1'd1;
@@ -129,7 +134,9 @@ always @(posedge clk) begin
         freq_cnt <= 0;
         fout_cnt <= 0;
         fave <= fout_cnt;
+        if( fworst > fout_cnt ) fworst <= fout_cnt;
     end
+    if( frst ) fworst <= 16'hffff;
 end
 
 endmodule
