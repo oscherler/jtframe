@@ -223,8 +223,8 @@ assign stride    = {bwidth[11:2], 4'd0};
 always @(posedge CLK_VIDEO) begin
 	do_flip <= !rotate_en && flip;
 	FB_EN   <= rotate_en | flip;
-	FB_WIDTH  <= do_flip ? hsz ? vsz;
-	FB_HEIGHT <= do_flip ? vsz ? hsz;
+	FB_WIDTH  <= do_flip ? hsz : vsz;
+	FB_HEIGHT <= do_flip ? vsz : hsz;
 end
 
 function [1:0] buf_next;
