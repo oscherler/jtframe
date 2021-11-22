@@ -180,14 +180,14 @@ module screen_rotate
 	input         rotate_en,
 	input         flip,
 
-	output reg    FB_EN,
-	output  [4:0] FB_FORMAT,
-	output [11:0] FB_WIDTH,
-	output [11:0] FB_HEIGHT,
-	output [31:0] FB_BASE,
-	output [13:0] FB_STRIDE,
-	input         FB_VBL,
-	input         FB_LL,
+	output reg        FB_EN,
+	output      [4:0] FB_FORMAT,
+	output reg [11:0] FB_WIDTH,
+	output reg [11:0] FB_HEIGHT,
+	output     [31:0] FB_BASE,
+	output     [13:0] FB_STRIDE,
+	input             FB_VBL,
+	input             FB_LL,
 
 	output        DDRAM_CLK,
 	input         DDRAM_BUSY,
@@ -217,14 +217,14 @@ assign DDRAM_RD       = 0;
 
 assign FB_FORMAT = 5'b00110;
 assign FB_BASE   = {MEM_BASE,o_fb,23'd0};
-assign FB_WIDTH  = vsz;
-assign FB_HEIGHT = hsz;
 assign FB_STRIDE = stride;
 assign stride    = {bwidth[11:2], 4'd0};
 
 always @(posedge CLK_VIDEO) begin
 	do_flip <= !rotate_en && flip;
 	FB_EN   <= rotate_en | flip;
+	FB_WIDTH  <= do_flip ? hsz ? vsz;
+	FB_HEIGHT <= do_flip ? vsz ? hsz;
 end
 
 function [1:0] buf_next;
@@ -268,13 +268,14 @@ always @(posedge CLK_VIDEO) begin
 		if(old_de & ~VGA_DE) hsz <= hcnt;
 		if(~old_vs & VGA_VS) begin
 			vsz <= vcnt;
-			bwidth <= vcnt + 2'd3;
+			bwidth <= (do_flip ? hsz : vcnt) + 2'd3;
 			vcnt <= 0;
 		end
-		if(old_vs & ~VGA_VS) bufsize <= hsz * stride;
+		if(old_vs & ~VGA_VS) bufsize <= do_flip ? vsz * (hsz<<2) : hsz * stride;
 	end
 end
 
+// write the image to the frame buffer
 reg [22:0] ram_addr, next_addr;
 reg [31:0] ram_data;
 reg        ram_wr;
@@ -288,16 +289,23 @@ always @(posedge CLK_VIDEO) begin
 		old_de <= VGA_DE;
 
 		if(~old_vs & VGA_VS) begin // new frame
-			next_addr <= rotate_ccw ? (bufsize - stride) : {vsz-1'd1, 2'b00};
-			hcnt <= rotate_ccw ? 3'd4 : {vsz-2'd2, 2'b00};
+			if( do_flip ) begin
+				next_addr <= bufsize-3'd4;
+				//hcnt      <= hsz;
+			end else begin
+				next_addr <= rotate_ccw ? (bufsize - stride) : {vsz-1'd1, 2'b00};
+				hcnt <= rotate_ccw ? 3'd4 : {vsz-2'd2, 2'b00};
+			end
 		end
 		if(VGA_DE) begin // next pixel
 			ram_wr <= 1;
 			ram_data <= {VGA_B,VGA_G,VGA_R};
 			ram_addr <= next_addr;
-			next_addr <= rotate_ccw ? (next_addr - stride) : (next_addr + stride);
+			next_addr <=
+				do_flip    ? ram_addr-3'd4 :
+				rotate_ccw ? (next_addr - stride) : (next_addr + stride);
 		end
-		if(old_de & ~VGA_DE) begin // new line
+		if(old_de & ~VGA_DE & ~do_flip) begin // new line
 			next_addr <= rotate_ccw ? (bufsize - stride + hcnt) : hcnt;
 			hcnt <= rotate_ccw ? (hcnt + 3'd4) : (hcnt - 3'd4);
 		end
