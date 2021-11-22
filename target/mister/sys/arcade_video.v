@@ -287,17 +287,17 @@ always @(posedge CLK_VIDEO) begin
 		old_vs <= VGA_VS;
 		old_de <= VGA_DE;
 
-		if(~old_vs & VGA_VS) begin
+		if(~old_vs & VGA_VS) begin // new frame
 			next_addr <= rotate_ccw ? (bufsize - stride) : {vsz-1'd1, 2'b00};
 			hcnt <= rotate_ccw ? 3'd4 : {vsz-2'd2, 2'b00};
 		end
-		if(VGA_DE) begin
+		if(VGA_DE) begin // next pixel
 			ram_wr <= 1;
 			ram_data <= {VGA_B,VGA_G,VGA_R};
 			ram_addr <= next_addr;
 			next_addr <= rotate_ccw ? (next_addr - stride) : (next_addr + stride);
 		end
-		if(old_de & ~VGA_DE) begin
+		if(old_de & ~VGA_DE) begin // new line
 			next_addr <= rotate_ccw ? (bufsize - stride + hcnt) : hcnt;
 			hcnt <= rotate_ccw ? (hcnt + 3'd4) : (hcnt - 3'd4);
 		end

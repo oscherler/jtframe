@@ -277,7 +277,7 @@ jtframe_resync u_resync(
 );
 
 wire [15:0] status_menumask; // a high value hides the menu item
-reg  [ 1:0] rotate_osd;      // extra OSD options for rotation, bit 0 = rotate, bit 1 = flip
+reg         framebuf_flip;      // extra OSD options for rotation, bit 0 = rotate, bit 1 = flip
 
 assign status_menumask[15:5] = 0,
 `ifdef JTFRAME_ROTATE       // extra rotate options for vertical games
@@ -292,11 +292,7 @@ assign status_menumask[15:5] = 0,
        status_menumask[0]    = direct_video;
 
 always @(posedge clk_sys) begin
-    case( status[39:38] )
-        default: rotate_osd <= 1;
-        1: rotate_osd <= 0;
-        2: rotate_osd <= 2;
-    endcase
+    framebuf_flip <= status[39:38]==2;
 end
 
 
@@ -642,12 +638,6 @@ wire rot_clk;
     `else
     localparam ROTCCW=0;
     `endif
-    wire rot_direction = ROTCCW[0];
-    `ifdef JTFRAME_ROTATE
-        wire rot_en        = rotate_osd[0];
-    `else
-        wire rot_en        = rotate[0];
-    `endif
 
     screen_rotate u_rotate(
         .CLK_VIDEO      ( scan2x_clk     ),
@@ -661,8 +651,8 @@ wire rot_clk;
         .VGA_DE         ( scan2x_de      ),
 
         .rotate_ccw     ( ROTCCW[0]      ),
-        .rotate_en      ( rot_en         ),
-        .flip           ( rotate_osd[1]  ),
+        .rotate_en      ( rotate[0]      ),
+        .flip           ( framebuf_flip  ),
 
         .FB_EN          ( FB_EN          ),
         .FB_FORMAT      ( FB_FORMAT      ),
