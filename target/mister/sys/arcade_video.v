@@ -180,7 +180,7 @@ module screen_rotate
 	input         rotate_en,
 	input         flip,
 
-	output        FB_EN,
+	output reg    FB_EN,
 	output  [4:0] FB_FORMAT,
 	output [11:0] FB_WIDTH,
 	output [11:0] FB_HEIGHT,
@@ -201,6 +201,12 @@ module screen_rotate
 
 parameter MEM_BASE    = 7'b0010010; // buffer at 0x24000000, 3x8MB
 
+reg  [11:0] hsz = 320, vsz = 240;
+reg  [11:0] bwidth;
+reg  [22:0] bufsize;
+reg         do_flip;
+wire [13:0] stride;
+
 assign DDRAM_CLK      = CLK_VIDEO;
 assign DDRAM_BURSTCNT = 1;
 assign DDRAM_ADDR     = {MEM_BASE, i_fb, ram_addr[22:3]};
@@ -209,12 +215,17 @@ assign DDRAM_DIN      = {ram_data,ram_data};
 assign DDRAM_WE       = ram_wr;
 assign DDRAM_RD       = 0;
 
-assign FB_EN     = rotate_en;
 assign FB_FORMAT = 5'b00110;
 assign FB_BASE   = {MEM_BASE,o_fb,23'd0};
 assign FB_WIDTH  = vsz;
 assign FB_HEIGHT = hsz;
 assign FB_STRIDE = stride;
+assign stride    = {bwidth[11:2], 4'd0};
+
+always @(posedge CLK_VIDEO) begin
+	do_flip <= !rotate_en && flip;
+	FB_EN   <= rotate_en | flip;
+end
 
 function [1:0] buf_next;
 	input [1:0] a,b;
@@ -241,9 +252,6 @@ always @(posedge CLK_VIDEO) begin
 	end
 end
 
-reg [11:0] hsz = 320, vsz = 240;
-reg [11:0] bwidth;
-reg [22:0] bufsize;
 always @(posedge CLK_VIDEO) begin
 	reg [11:0] hcnt = 0, vcnt = 0;
 	reg old_vs, old_de;
@@ -266,8 +274,6 @@ always @(posedge CLK_VIDEO) begin
 		if(old_vs & ~VGA_VS) bufsize <= hsz * stride;
 	end
 end
-
-wire [13:0] stride = {bwidth[11:2], 4'd0};
 
 reg [22:0] ram_addr, next_addr;
 reg [31:0] ram_data;

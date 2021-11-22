@@ -643,7 +643,11 @@ wire rot_clk;
     localparam ROTCCW=0;
     `endif
     wire rot_direction = ROTCCW[0];
-    wire rot_en        = rotate[0]|rotate_osd[0];
+    `ifdef JTFRAME_ROTATE
+        wire rot_en        = rotate_osd[0];
+    `else
+        wire rot_en        = rotate[0];
+    `endif
 
     screen_rotate u_rotate(
         .CLK_VIDEO      ( scan2x_clk     ),
