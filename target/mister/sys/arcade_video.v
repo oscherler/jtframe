@@ -208,6 +208,10 @@ reg  [22:0] bufsize;
 reg         do_flip;
 wire [13:0] stride;
 
+reg  [22:0] ram_addr, next_addr;
+reg  [31:0] ram_data;
+reg         ram_wr;
+
 assign DDRAM_CLK      = CLK_VIDEO;
 assign DDRAM_BURSTCNT = 1;
 assign DDRAM_ADDR     = {MEM_BASE, i_fb, ram_addr[22:3]};
@@ -237,6 +241,7 @@ function [1:0] buf_next;
 	end
 endfunction
 
+// select the active buffer
 reg [1:0] i_fb,o_fb;
 always @(posedge CLK_VIDEO) begin
 	reg old_vbl,old_vs;
@@ -275,14 +280,11 @@ always @(posedge CLK_VIDEO) begin
 			bwidth <= do_flip ? hsz : vcnt + 2'd3; // rounded to a multiple of 4
 			vcnt <= 0;
 		end
-		if(old_vs & ~VGA_VS) bufsize <= (do_flip ? vsz : hsz ) * stride;
+		if(old_vs & ~VGA_VS) bufsize <= (vsz<<2) * hsz;
 	end
 end
 
 // write the image to the frame buffer
-reg [22:0] ram_addr, next_addr;
-reg [31:0] ram_data;
-reg        ram_wr;
 always @(posedge CLK_VIDEO) begin
 	reg [13:0] hcnt = 0;
 	reg old_vs, old_de;
@@ -301,9 +303,9 @@ always @(posedge CLK_VIDEO) begin
 			end
 		end
 		if(VGA_DE) begin // next pixel
-			ram_wr <= 1;
-			ram_data <= {8'd0,VGA_B,VGA_G,VGA_R};
-			ram_addr <= next_addr;
+			ram_wr    <= 1;
+			ram_data  <= {8'd0,VGA_B,VGA_G,VGA_R};
+			ram_addr  <= next_addr;
 			next_addr <=
 				do_flip    ? ram_addr-3'd4 : // 4 bytes per pixel
 				rotate_ccw ? (next_addr - stride) : (next_addr + stride);
