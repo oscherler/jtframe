@@ -47,6 +47,7 @@ JTFRAME_OSD_VOL          |         | Show FX volume control on OSD
 JTFRAME_OSDCOLOR         |         | Sets the OSD colour
 JTFRAME_PLL              |         | PLL module name to be used. Defaults to jtframe_pll0
 JTFRAME_RELEASE          |         | Disables debug control via keyboard
+JTFRAME_ROTATE           |         | Enables more rotate options in the OSD
 JTFRAME_SCAN2X_NOBLEND   | MiST    | Disables pixel blending
 JTFRAME_SDRAM96          |         | SDRAM is clocked at 96MHz and the clk input of game is 96MHz
 JTFRAME_SDRAM_BANKS      |         | Game module ports will support interleaved bank access

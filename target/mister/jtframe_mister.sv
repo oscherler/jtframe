@@ -277,12 +277,25 @@ jtframe_resync u_resync(
 );
 
 wire [15:0] status_menumask; // a high value hides the menu item
+reg  [ 1:0] rotate_extra_osd;// extra OSD options for rotation
 
-assign status_menumask[15:4] = 0,
+assign status_menumask[15:5] = 0,
+`ifdef JTFRAME_ROTATE       // extra rotate options for vertical games
+       status_menumask[4]    = ~core_mod[0],  // shown for vertical games
+       status_menumask[1]    = 1,   // hidden
+`else
+       status_menumask[4]    = 1,   // hidden
+       status_menumask[1]    = ~core_mod[0],  // shown for vertical games
+`endif
        status_menumask[3]    = shadowmask==0,    // shadow mask filter
        status_menumask[2]    = ~hsize_enable,    // horizontal scaling
-       status_menumask[1]    = ~core_mod[0],     // vertical game
        status_menumask[0]    = direct_video;
+
+always @(posedge clk_sys) begin
+    rotate_extra_osd[0] = status[39:38]!=0;
+    rotate_extra_osd[1] = status[39];
+end
+
 
 jtframe_mister_dwnld u_dwnld(
     .rst            ( rst            ),
@@ -626,6 +639,9 @@ wire rot_clk;
     `else
     localparam ROTCCW=0;
     `endif
+    wire rot_direction = rotate_extra_osd[1]^ROTCCW[0];
+    wire rot_enb       =~(rotate[0]|rotate_extra_osd[0]);
+
     screen_rotate u_rotate(
         .CLK_VIDEO      ( scan2x_clk     ),
         .CE_PIXEL       ( scan2x_cen     ),
@@ -637,8 +653,8 @@ wire rot_clk;
         .VGA_VS         ( scan2x_vs      ),
         .VGA_DE         ( scan2x_de      ),
 
-        .rotate_ccw     ( ROTCCW         ),
-        .no_rotate      ( ~rotate[0]     ),
+        .rotate_ccw     ( rot_direction  ),
+        .no_rotate      ( rot_enb        ),
 
         .FB_EN          ( FB_EN          ),
         .FB_FORMAT      ( FB_FORMAT      ),
