@@ -206,7 +206,7 @@ reg  [11:0] hsz = 320, vsz = 240;
 reg  [11:0] bwidth;
 reg  [22:0] bufsize;
 reg         do_flip;
-wire [13:0] stride;
+reg  [13:0] stride;
 
 assign DDRAM_CLK      = CLK_VIDEO;
 assign DDRAM_BURSTCNT = 1;
@@ -219,13 +219,14 @@ assign DDRAM_RD       = 0;
 assign FB_FORMAT = 5'b00110; // RGB 32bpp
 assign FB_BASE   = {MEM_BASE,o_fb,23'd0};
 assign FB_STRIDE = stride;
-assign stride    = {bwidth[11:2], 4'd0};
+//assign stride    = {bwidth[11:2], 4'd0};
 
 always @(posedge CLK_VIDEO) begin
 	do_flip <= !rotate_en && flip;
 	FB_EN   <= rotate_en | flip;
 	FB_WIDTH  <= do_flip ? hsz : vsz;
 	FB_HEIGHT <= do_flip ? vsz : hsz;
+	stride <= (debug_bus[7] ? vsz : hsz ) << debug_bus[6:4];
 end
 
 function [1:0] buf_next;
@@ -292,7 +293,7 @@ always @(posedge CLK_VIDEO) begin
 
 		if(~old_vs & VGA_VS) begin // new frame
 			if( do_flip ) begin
-				next_addr <= bufsize-3'd8;
+				next_addr <= bufsize-debug_bus[3:0];
 				//hcnt      <= hsz;
 			end else begin
 				next_addr <= rotate_ccw ? (bufsize - stride) : {vsz-1'd1, 2'b00};
