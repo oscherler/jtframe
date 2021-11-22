@@ -179,6 +179,7 @@ module screen_rotate
 	input         rotate_ccw,
 	input         rotate_en,
 	input         flip,
+	input   [7:0] debug_bus,
 
 	output reg        FB_EN,
 	output      [4:0] FB_FORMAT,
@@ -215,7 +216,7 @@ assign DDRAM_DIN      = {ram_data,ram_data};
 assign DDRAM_WE       = ram_wr;
 assign DDRAM_RD       = 0;
 
-assign FB_FORMAT = 5'b00110;
+assign FB_FORMAT = 5'b00110; // RGB 32bpp
 assign FB_BASE   = {MEM_BASE,o_fb,23'd0};
 assign FB_STRIDE = stride;
 assign stride    = {bwidth[11:2], 4'd0};
@@ -252,6 +253,7 @@ always @(posedge CLK_VIDEO) begin
 	end
 end
 
+// find out the image size
 always @(posedge CLK_VIDEO) begin
 	reg [11:0] hcnt = 0, vcnt = 0;
 	reg old_vs, old_de;
@@ -290,7 +292,7 @@ always @(posedge CLK_VIDEO) begin
 
 		if(~old_vs & VGA_VS) begin // new frame
 			if( do_flip ) begin
-				next_addr <= bufsize-3'd4;
+				next_addr <= bufsize-3'd8;
 				//hcnt      <= hsz;
 			end else begin
 				next_addr <= rotate_ccw ? (bufsize - stride) : {vsz-1'd1, 2'b00};
@@ -302,7 +304,7 @@ always @(posedge CLK_VIDEO) begin
 			ram_data <= {VGA_B,VGA_G,VGA_R};
 			ram_addr <= next_addr;
 			next_addr <=
-				do_flip    ? ram_addr-3'd4 :
+				do_flip    ? ram_addr-debug_bus[3:0] :
 				rotate_ccw ? (next_addr - stride) : (next_addr + stride);
 		end
 		if(old_de & ~VGA_DE & ~do_flip) begin // new line

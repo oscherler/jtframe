@@ -663,6 +663,8 @@ wire rot_clk;
         .FB_VBL         ( FB_VBL         ),
         .FB_LL          ( FB_LL          ),
 
+        .debug_bus      ( debug_bus      ),
+
         //muxed
         .DDRAM_BUSY     ( rot_busy       ),
         .DDRAM_BURSTCNT ( rot_burstcnt   ),
