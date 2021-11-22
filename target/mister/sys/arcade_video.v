@@ -206,7 +206,7 @@ reg  [11:0] hsz = 320, vsz = 240;
 reg  [11:0] bwidth;
 reg  [22:0] bufsize;
 reg         do_flip;
-reg  [13:0] stride;
+wire [13:0] stride;
 
 assign DDRAM_CLK      = CLK_VIDEO;
 assign DDRAM_BURSTCNT = 1;
@@ -219,14 +219,13 @@ assign DDRAM_RD       = 0;
 assign FB_FORMAT = 5'b00110; // RGB 32bpp
 assign FB_BASE   = {MEM_BASE,o_fb,23'd0};
 assign FB_STRIDE = stride;
-//assign stride    = {bwidth[11:2], 4'd0};
+assign stride    = { bwidth[11:2], 4'd0 };
 
 always @(posedge CLK_VIDEO) begin
-	do_flip <= !rotate_en && flip;
-	FB_EN   <= rotate_en | flip;
+	do_flip   <= !rotate_en && flip;
+	FB_EN     <= rotate_en | flip;
 	FB_WIDTH  <= do_flip ? hsz : vsz;
 	FB_HEIGHT <= do_flip ? vsz : hsz;
-	stride <= (debug_bus[7] ? vsz : hsz ) << debug_bus[6:4];
 end
 
 function [1:0] buf_next;
@@ -271,10 +270,12 @@ always @(posedge CLK_VIDEO) begin
 		if(old_de & ~VGA_DE) hsz <= hcnt;
 		if(~old_vs & VGA_VS) begin
 			vsz <= vcnt;
-			bwidth <= (do_flip ? hsz : vcnt) + 2'd3;
+			// hsz is always a multiple of 4 in an arcade system
+			// (and in any decent computer system)
+			bwidth <= do_flip ? hsz : vcnt + 2'd3; // rounded to a multiple of 4
 			vcnt <= 0;
 		end
-		if(old_vs & ~VGA_VS) bufsize <= do_flip ? vsz * (hsz<<2) : hsz * stride;
+		if(old_vs & ~VGA_VS) bufsize <= (do_flip ? vsz : hsz ) * stride;
 	end
 end
 
@@ -293,8 +294,7 @@ always @(posedge CLK_VIDEO) begin
 
 		if(~old_vs & VGA_VS) begin // new frame
 			if( do_flip ) begin
-				next_addr <= bufsize-debug_bus[3:0];
-				//hcnt      <= hsz;
+				next_addr <= bufsize-3'd4;
 			end else begin
 				next_addr <= rotate_ccw ? (bufsize - stride) : {vsz-1'd1, 2'b00};
 				hcnt <= rotate_ccw ? 3'd4 : {vsz-2'd2, 2'b00};
@@ -302,10 +302,10 @@ always @(posedge CLK_VIDEO) begin
 		end
 		if(VGA_DE) begin // next pixel
 			ram_wr <= 1;
-			ram_data <= {VGA_B,VGA_G,VGA_R};
+			ram_data <= {8'd0,VGA_B,VGA_G,VGA_R};
 			ram_addr <= next_addr;
 			next_addr <=
-				do_flip    ? ram_addr-debug_bus[3:0] :
+				do_flip    ? ram_addr-3'd4 : // 4 bytes per pixel
 				rotate_ccw ? (next_addr - stride) : (next_addr + stride);
 		end
 		if(old_de & ~VGA_DE & ~do_flip) begin // new line
