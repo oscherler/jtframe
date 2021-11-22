@@ -177,7 +177,8 @@ module screen_rotate
 	input         VGA_DE,
 
 	input         rotate_ccw,
-	input         no_rotate,
+	input         rotate_en,
+	input         flip,
 
 	output        FB_EN,
 	output  [4:0] FB_FORMAT,
@@ -208,7 +209,7 @@ assign DDRAM_DIN      = {ram_data,ram_data};
 assign DDRAM_WE       = ram_wr;
 assign DDRAM_RD       = 0;
 
-assign FB_EN     = ~no_rotate;
+assign FB_EN     = rotate_en;
 assign FB_FORMAT = 5'b00110;
 assign FB_BASE   = {MEM_BASE,o_fb,23'd0};
 assign FB_WIDTH  = vsz;
