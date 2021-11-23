@@ -1040,32 +1040,25 @@ scanlines #(1) HDMI_scanlines
 	.de_out(hdmi_de_sl)
 );
 
-`ifndef JTFRAME_NOSHADOWMASK
-	wire [23:0] hdmi_data_mask;
-	wire        hdmi_de_mask, hdmi_vs_mask, hdmi_hs_mask;
-	shadowmask HDMI_shadowmask
-	(
-		.clk(clk_hdmi),
+wire [23:0] hdmi_data_mask;
+wire        hdmi_de_mask, hdmi_vs_mask, hdmi_hs_mask;
+shadowmask HDMI_shadowmask
+(
+	.clk(clk_hdmi),
 
-		.shadowmask_type(shadowmask_type),
-		.mask_2x(mask_2x),
-		.mask_rotate(mask_rotate),
-		.din(hdmi_data_sl),
-		.hs_in(hdmi_hs_sl),
-		.vs_in(hdmi_vs_sl),
-		.de_in(hdmi_de_sl),
+	.shadowmask_type(shadowmask_type),
+	.mask_2x(mask_2x),
+	.mask_rotate(mask_rotate),
+	.din(hdmi_data_sl),
+	.hs_in(hdmi_hs_sl),
+	.vs_in(hdmi_vs_sl),
+	.de_in(hdmi_de_sl),
 
-		.dout(hdmi_data_mask),
-		.hs_out(hdmi_hs_mask),
-		.vs_out(hdmi_vs_mask),
-		.de_out(hdmi_de_mask)
-	);
-`else
-	assign hdmi_data_mask=hdmi_data_sl;
-	assign hdmi_hs_mask=hdmi_hs_sl;
-	assign hdmi_vs_mask=hdmi_vs_sl;
-	assign hdmi_de_mask=hdmi_de_sl;
-`endif
+	.dout(hdmi_data_mask),
+	.hs_out(hdmi_hs_mask),
+	.vs_out(hdmi_vs_mask),
+	.de_out(hdmi_de_mask)
+);
 
 wire [23:0] hdmi_data_osd;
 wire        hdmi_de_osd, hdmi_vs_osd, hdmi_hs_osd;
