@@ -652,7 +652,7 @@ wire rot_clk;
 
         .rotate_ccw     ( ROTCCW[0]      ),
         .no_rotate      ( ~rotate[0]     ),
-        //.flip           ( framebuf_flip  ),
+        .flip           ( framebuf_flip  ),
 
         .FB_EN          ( FB_EN          ),
         .FB_FORMAT      ( FB_FORMAT      ),
