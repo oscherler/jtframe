@@ -261,14 +261,16 @@ always @(posedge CLK_VIDEO) begin
 			hcnt <= 1;
 			vcnt <= vcnt + 1'd1;
 		end
-		if(old_de & ~VGA_DE) hsz <= hcnt;
+		if(old_de & ~VGA_DE) begin
+			hsz <= hcnt;
+			bwidth <= hcnt + 2'd3;
+		end
 		if(~old_vs & VGA_VS) begin
 			vsz <= vcnt;
-			bwidth <= vcnt + 2'd3;
 			vcnt <= 0;
 			fb_en <= {fb_en[1:0], ~no_rotate};
 		end
-		if(old_vs & ~VGA_VS) bufsize <= hsz * stride;
+		if(old_vs & ~VGA_VS) bufsize <= vsz * stride;
 	end
 end
 
@@ -287,19 +289,19 @@ always @(posedge CLK_VIDEO) begin
 		old_de <= VGA_DE;
 
 		if(~old_vs & VGA_VS) begin
-			next_addr <= {vsz-1'd1, 2'b00};
-			hcnt <= {vsz-2'd2, 2'b00};
+			next_addr <= bufsize-3'd4;
+			//hcnt <= (vsz-4'd2)<<2;
 		end
 		if(VGA_DE) begin
 			ram_wr <= 1;
-			ram_data <= {VGA_B,VGA_G,VGA_R};
+			ram_data <= {8'd0, VGA_B,VGA_G,VGA_R};
 			ram_addr <= next_addr;
-			next_addr <= next_addr + stride;
+			next_addr <= next_addr - 3'd4;
 		end
-		if(old_de & ~VGA_DE) begin
-			next_addr <= hcnt;
-			hcnt <= hcnt - 3'd4;
-		end
+		//if(old_de & ~VGA_DE) begin
+		//	next_addr <= hcnt;
+		//	hcnt <= hcnt - 3'd4;
+		//end
 	end
 end
 
