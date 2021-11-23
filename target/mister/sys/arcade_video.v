@@ -177,18 +177,16 @@ module screen_rotate
 	input         VGA_DE,
 
 	input         rotate_ccw,
-	input         rotate_en,
-	input         flip,
-	input   [7:0] debug_bus,
+	input         no_rotate,
 
-	output reg        FB_EN,
-	output      [4:0] FB_FORMAT,
-	output reg [11:0] FB_WIDTH,
-	output reg [11:0] FB_HEIGHT,
-	output     [31:0] FB_BASE,
-	output     [13:0] FB_STRIDE,
-	input             FB_VBL,
-	input             FB_LL,
+	output        FB_EN,
+	output  [4:0] FB_FORMAT,
+	output [11:0] FB_WIDTH,
+	output [11:0] FB_HEIGHT,
+	output [31:0] FB_BASE,
+	output [13:0] FB_STRIDE,
+	input         FB_VBL,
+	input         FB_LL,
 
 	output        DDRAM_CLK,
 	input         DDRAM_BUSY,
@@ -202,16 +200,6 @@ module screen_rotate
 
 parameter MEM_BASE    = 7'b0010010; // buffer at 0x24000000, 3x8MB
 
-reg  [11:0] hsz = 320, vsz = 240;
-reg  [11:0] bwidth;
-reg  [22:0] bufsize;
-reg         do_flip;
-wire [13:0] stride;
-
-reg  [22:0] ram_addr, next_addr;
-reg  [31:0] ram_data;
-reg         ram_wr;
-
 assign DDRAM_CLK      = CLK_VIDEO;
 assign DDRAM_BURSTCNT = 1;
 assign DDRAM_ADDR     = {MEM_BASE, i_fb, ram_addr[22:3]};
@@ -220,17 +208,12 @@ assign DDRAM_DIN      = {ram_data,ram_data};
 assign DDRAM_WE       = ram_wr;
 assign DDRAM_RD       = 0;
 
-assign FB_FORMAT = 5'b00110; // RGB 32bpp
+assign FB_EN     = fb_en[2];
+assign FB_FORMAT = 5'b00110;
 assign FB_BASE   = {MEM_BASE,o_fb,23'd0};
+assign FB_WIDTH  = vsz;
+assign FB_HEIGHT = hsz;
 assign FB_STRIDE = stride;
-assign stride    = { bwidth[11:2], 4'd0 };
-
-always @(posedge CLK_VIDEO) begin
-	do_flip   <= !rotate_en && flip;
-	FB_EN     <= rotate_en | flip;
-	FB_WIDTH  <= do_flip ? hsz : vsz;
-	FB_HEIGHT <= do_flip ? vsz : hsz;
-end
 
 function [1:0] buf_next;
 	input [1:0] a,b;
@@ -241,7 +224,6 @@ function [1:0] buf_next;
 	end
 endfunction
 
-// select the active buffer
 reg [1:0] i_fb,o_fb;
 always @(posedge CLK_VIDEO) begin
 	reg old_vbl,old_vs;
@@ -258,7 +240,14 @@ always @(posedge CLK_VIDEO) begin
 	end
 end
 
-// find out the image size
+initial begin
+	fb_en = 0;
+end
+
+reg  [2:0] fb_en = 0;
+reg [11:0] hsz = 320, vsz = 240;
+reg [11:0] bwidth;
+reg [22:0] bufsize;
 always @(posedge CLK_VIDEO) begin
 	reg [11:0] hcnt = 0, vcnt = 0;
 	reg old_vs, old_de;
@@ -275,44 +264,41 @@ always @(posedge CLK_VIDEO) begin
 		if(old_de & ~VGA_DE) hsz <= hcnt;
 		if(~old_vs & VGA_VS) begin
 			vsz <= vcnt;
-			// hsz is always a multiple of 4 in an arcade system
-			// (and in any decent computer system)
-			bwidth <= do_flip ? hsz : vcnt + 2'd3; // rounded to a multiple of 4
+			bwidth <= vcnt + 2'd3;
 			vcnt <= 0;
+			fb_en <= {fb_en[1:0], ~no_rotate};
 		end
-		if(old_vs & ~VGA_VS) bufsize <= (vsz<<2) * hsz;
+		if(old_vs & ~VGA_VS) bufsize <= hsz * stride;
 	end
 end
 
-// write the image to the frame buffer
+wire [13:0] stride = {bwidth[11:2], 4'd0};
+
+reg [22:0] ram_addr, next_addr;
+reg [31:0] ram_data;
+reg        ram_wr;
 always @(posedge CLK_VIDEO) begin
 	reg [13:0] hcnt = 0;
 	reg old_vs, old_de;
 
 	ram_wr <= 0;
-	if(CE_PIXEL) begin
+	if(CE_PIXEL && FB_EN) begin
 		old_vs <= VGA_VS;
 		old_de <= VGA_DE;
 
-		if(~old_vs & VGA_VS) begin // new frame
-			if( do_flip ) begin
-				next_addr <= bufsize-3'd4;
-			end else begin
-				next_addr <= rotate_ccw ? (bufsize - stride) : {vsz-1'd1, 2'b00};
-				hcnt <= rotate_ccw ? 3'd4 : {vsz-2'd2, 2'b00};
-			end
+		if(~old_vs & VGA_VS) begin
+			next_addr <= {vsz-1'd1, 2'b00};
+			hcnt <= {vsz-2'd2, 2'b00};
 		end
-		if(VGA_DE) begin // next pixel
-			ram_wr    <= 1;
-			ram_data  <= {8'd0,VGA_B,VGA_G,VGA_R};
-			ram_addr  <= next_addr;
-			next_addr <=
-				do_flip    ? ram_addr-3'd4 : // 4 bytes per pixel
-				rotate_ccw ? (next_addr - stride) : (next_addr + stride);
+		if(VGA_DE) begin
+			ram_wr <= 1;
+			ram_data <= {VGA_B,VGA_G,VGA_R};
+			ram_addr <= next_addr;
+			next_addr <= next_addr + stride;
 		end
-		if(old_de & ~VGA_DE & ~do_flip) begin // new line
-			next_addr <= rotate_ccw ? (bufsize - stride + hcnt) : hcnt;
-			hcnt <= rotate_ccw ? (hcnt + 3'd4) : (hcnt - 3'd4);
+		if(old_de & ~VGA_DE) begin
+			next_addr <= hcnt;
+			hcnt <= hcnt - 3'd4;
 		end
 	end
 end

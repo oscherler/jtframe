@@ -651,8 +651,8 @@ wire rot_clk;
         .VGA_DE         ( scan2x_de      ),
 
         .rotate_ccw     ( ROTCCW[0]      ),
-        .rotate_en      ( rotate[0]      ),
-        .flip           ( framebuf_flip  ),
+        .no_rotate      ( ~rotate[0]     ),
+        //.flip           ( framebuf_flip  ),
 
         .FB_EN          ( FB_EN          ),
         .FB_FORMAT      ( FB_FORMAT      ),
@@ -663,7 +663,7 @@ wire rot_clk;
         .FB_VBL         ( FB_VBL         ),
         .FB_LL          ( FB_LL          ),
 
-        .debug_bus      ( debug_bus      ),
+        //.debug_bus      ( debug_bus      ),
 
         //muxed
         .DDRAM_BUSY     ( rot_busy       ),
