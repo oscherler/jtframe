@@ -211,8 +211,8 @@ assign DDRAM_RD       = 0;
 assign FB_EN     = fb_en[2];
 assign FB_FORMAT = 5'b00110;
 assign FB_BASE   = {MEM_BASE,o_fb,23'd0};
-assign FB_WIDTH  = vsz;
-assign FB_HEIGHT = hsz;
+assign FB_WIDTH  = hsz;
+assign FB_HEIGHT = vsz;
 assign FB_STRIDE = stride;
 
 function [1:0] buf_next;
