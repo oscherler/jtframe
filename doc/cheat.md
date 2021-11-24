@@ -67,6 +67,8 @@ C-F        | I/O    | Game module communication (see below)
 4C         | I      | 2P joystick right analogue stick X
 4D         | I      | 2P joystick right analogue stick Y
 30-33      | O      | Lock key
+34         | I/O    | UART Rx/Tx data
+35         | I      | UART status {rx_error,2'b0,tx_busy,rx_rdy}
 40         | O      | Resets the watchdog
 80         | O      | Starts SDRAM read
 80         | I      | Reads peripheral status (bits 7:6)

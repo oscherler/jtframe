@@ -37,7 +37,7 @@ module mist_top(
     output [1:0]    SDRAM_BA,       // SDRAM Bank Address
     inout           SDRAM_CLK,      // SDRAM Clock
     output          SDRAM_CKE,      // SDRAM Clock Enable
-   // SPI interface to arm io controller
+    // SPI interface to arm io controller
     inout           SPI_DO,
     input           SPI_DI,
     input           SPI_SCK,
@@ -45,6 +45,10 @@ module mist_top(
     input           SPI_SS3,
     input           SPI_SS4,
     input           CONF_DATA0,
+    // UART pins -MIDI extension
+    // UART
+    input           UART_RX,
+    output          UART_TX,
     // sound
     output          AUDIO_L,
     output          AUDIO_R,
@@ -230,6 +234,9 @@ u_frame(
     .VGA_VS         ( VGA_VS         ),
     // LED
     .game_led       ( game_led       ),
+    // UART
+    .uart_rx        ( UART_RX        ),
+    .uart_tx        ( UART_TX        ),
     // SDRAM interface
     .SDRAM_DQ       ( SDRAM_DQ       ),
     .SDRAM_A        ( SDRAM_A        ),

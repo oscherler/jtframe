@@ -91,6 +91,9 @@ module jtframe_board #(parameter
     // keyboard
     input             ps2_kbd_clk,
     input             ps2_kbd_data,
+    // UART
+    input             uart_rx,
+    output            uart_tx,
     // joystick
     input     [15:0]  board_joystick1,
     input     [15:0]  board_joystick2,
@@ -467,6 +470,10 @@ wire [SDRAMW-1:0] bax_addr;
         .st_addr    ( st_addr   ),
         .st_dout    ( st_dout   ),
         .debug_bus  ( debug_bus ),
+
+        // UART
+        .uart_rx    ( uart_rx   ),
+        .uart_tx    ( uart_tx   ),
 
         // Video
         .vram_addr  ( vram_addr ),

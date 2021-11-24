@@ -247,6 +247,10 @@ wire [ 7:0] ddrld_burstcnt;
 wire [28:0] ddrld_addr;
 wire        ddrld_rd, ddrld_busy;
 
+// UART
+wire        uart_rx, uart_tx;
+wire [6:0]  joy_in, joy_out;
+
 // H-Pos & V-Pos for CRT
 assign { voffset, hoffset } = status[31:24];
 
@@ -262,6 +266,17 @@ assign {FB_PAL_CLK, FB_FORCE_BLANK, FB_PAL_ADDR, FB_PAL_DOUT, FB_PAL_WR} = '0;
 assign shadowmask     = status[34:32];
 assign shadowmask_2x  = status[35];
 assign shadowmask_rot = (core_mod[0] & rotate[0]) ^ status[36];
+
+// UART
+`ifdef JTFRAME_UART
+    assign USER_OUT[0] = uart_tx;
+    assign USER_OUT[6:1] = 6'h3f;
+    assign uart_rx     = USER_IN[1];
+`else
+    assign uart_rx = 1;
+    assign USER_OUT = joy_out;
+    assign joy_in   = USER_IN;
+`endif
 
 jtframe_resync u_resync(
     .clk        ( clk_sys       ),
@@ -346,8 +361,8 @@ jtframe_joymux #(.BUTTONS(BUTTONS)) u_joymux(
     .show_osd   ( show_osd  ),
 
     // MiSTer pins
-    .USER_IN    ( USER_IN   ),
-    .USER_OUT   ( USER_OUT  ),
+    .USER_IN    ( joy_in    ),
+    .USER_OUT   ( joy_out   ),
 
     // joystick mux
     .db15_en    ( db15_en   ),
@@ -552,6 +567,9 @@ jtframe_board #(
     .osd_shown      ( 1'b0            ),
     .game_led       ( game_led        ),
     .led            ( LED             ),
+    // UART
+    .uart_rx        ( uart_rx         ),
+    .uart_tx        ( uart_tx         ),
     // Scan doubler output
     .scan2x_r       ( scan2x_r        ),
     .scan2x_g       ( scan2x_g        ),

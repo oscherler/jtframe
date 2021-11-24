@@ -1377,7 +1377,11 @@ wire		db15_en;
 // db15_en will force a high voltage on pins 0/1, rather than
 // leaving it as high impedance. Otherwise, the outputs are
 // used as an open drain connection
+`ifdef JTFRAME_UART
+assign USER_IO[0] = user_out[0];
+`else
 assign USER_IO[0] = db15_en ? user_out[0] : !user_out[0]  ? 1'b0 : 1'bZ;
+`endif
 assign USER_IO[1] = db15_en ? user_out[1] : !user_out[1]  ? 1'b0 : 1'bZ;
 assign USER_IO[2] = !(SW[1] ? HDMI_I2S    : user_out[2]) ? 1'b0 : 1'bZ;
 assign USER_IO[3] =                       !user_out[3]  ? 1'b0 : 1'bZ;
