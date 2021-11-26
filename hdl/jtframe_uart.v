@@ -126,7 +126,7 @@ end
 // Transmission
 reg [3:0] tx_bitcnt;
 reg [4:0] tx_divcnt;
-reg [8:0] tx_reg;
+reg [7:0] tx_reg;
 
 always @(posedge clk or posedge rst) begin :tx_logic
     if(rst) begin
@@ -135,22 +135,22 @@ always @(posedge clk or posedge rst) begin :tx_logic
         tx_divcnt <= 0;
         tx_reg    <= 0;
     end else begin
-        if( tx_wr ) begin
-            tx_reg    <= {tx_data,1'b0}; // LSB = start bit
+        if( tx_wr && !tx_busy ) begin
+            tx_reg    <= tx_data;
             tx_bitcnt <= 0;
             tx_divcnt <= UART_DIVIDER;
             tx_busy   <= 1;
-            uart_tx   <= 0;
+            uart_tx   <= 0; // start bit
         end else if(zero && tx_busy) begin
             tx_divcnt <= tx_divcnt==0 ? UART_DIVIDER : tx_divcnt-1'd1;
             if( tx_divcnt==0 ) begin
                 tx_bitcnt <= tx_bitcnt + 4'd1;
-                if( tx_bitcnt < 9 ) begin
+                if( tx_bitcnt < 8 ) begin
                     uart_tx <= tx_reg[0];
                     tx_reg  <= tx_reg>>1;
                 end else begin
-                    uart_tx <= 1'b1; // 8 bits sent, now 1 or more stop bits
-                    tx_busy <= 0;
+                    uart_tx <= 1; // 8 bits sent, now 1 or more stop bits
+                    if(tx_bitcnt==9) tx_busy <= 0;
                 end
             end
         end

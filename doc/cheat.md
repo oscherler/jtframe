@@ -142,6 +142,8 @@ constant ANA1RX,   1C
 constant ANA1RY,   1D
 constant FRAMECNT, 2c
 constant KEYS,     30
+constant UART_DATA,34
+constant UART_ST,  35
 constant WATCHDOG, 40
 constant JOY2,     48
 constant ANA2RX,   4C

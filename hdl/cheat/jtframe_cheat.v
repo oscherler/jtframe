@@ -115,7 +115,7 @@ wire [31:0] cur_time = timestamp + {8'd0, sec_cnt};
 
 // UART
 wire [ 7:0] rx_data;
-reg         rx_clr, tx_wr;
+reg         rx_clr, tx_wr, uart_clr;
 wire        rx_rdy, rx_error;
 
 reg  [ 3:0] watchdog;
