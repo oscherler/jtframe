@@ -69,3 +69,15 @@ Pin   | user_io  |  Use
 ------|----------|------------
 D+    |    0     | JTFRAME Tx
 D-    |    1     | JTFRAME Rx
+
+This is how it looks with a common USB UART connected:
+
+![USB UART](uart.jpg)
+
+Linux serial port configuration:
+
+```
+stty -F /dev/ttyUSB1 57600 raw
+```
+
+For cores compiled at 96MHz (such as JTCPS) the speed is doubled: 115200

@@ -35,8 +35,8 @@ module jtframe_mister #(parameter
     // LED
     input  [ 1:0]   game_led,
     // Extension port (fake USB3)
-    input  [ 6:0]   USER_IN,
-    output [ 6:0]   USER_OUT,
+    input      [6:0] USER_IN,
+    output reg [6:0] USER_OUT,
     output          db15_en,
     output          uart_en,
     input           game_tx,
@@ -275,9 +275,12 @@ assign shadowmask_rot = (core_mod[0] & rotate[0]) ^ status[36];
 // If JTFRAME_UART is not defined, the core side is disabled
 // If JTFRAME_CHEAT is not defined, the cheat side is disabled
 // Otherwise, both can listen and talk
-assign USER_OUT = db15_en ? joy_out :
-                  uart_en ? {5'h0, 1'b1, uart_tx&game_tx } :
-                  7'h7f;
+always @(posedge clk_sys) begin
+    USER_OUT <= db15_en ? joy_out :
+        uart_en ? {~6'h0, uart_tx&game_tx } :
+        7'h7f;
+end
+
 assign uart_rx  = uart_en ? USER_IN[1] : 1'b1;
 assign game_rx  = uart_rx;
 assign joy_in   = USER_IN;
