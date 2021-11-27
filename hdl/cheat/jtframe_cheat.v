@@ -114,14 +114,16 @@ reg  [23:0] sec_cnt=0;   // count up to 194 days
 wire [31:0] cur_time = timestamp + {8'd0, sec_cnt};
 
 // UART
-wire [ 7:0] rx_data;
-reg         rx_clr, tx_wr, uart_clr;
-wire        rx_rdy, rx_error;
+wire [ 7:0] uart_dout;
+reg         uart_clr;
+wire        uart_wr, uart_busy, uart_rdy, uart_error;
 
 reg  [ 3:0] watchdog;
 reg         prst=0;
 
 assign pause_out = pause_in;
+// UART
+assign uart_wr = pwr && paddr==8'h34;
 
 always @(posedge clk) begin
     prst <= watchdog[3] | rst;
@@ -248,8 +250,6 @@ always @(posedge clk) begin
         led <= 0;
     else if( (pwr|kwr) && paddr==6 )
         led <= pout[0];
-    // UART
-    tx_wr <= pwr && paddr==8'h34;
 end
 
 reg [7:0] timemux;
@@ -320,10 +320,10 @@ always @(posedge clk) begin
                 8'h30,8'h31,8'h32,8'h33: pin <= lock_key[ paddr[1:0] ];
                 // UART
                 8'h34: begin
-                    pin <= rx_data;
+                    pin <= uart_dout;
                     uart_clr <= 1;
                 end
-                8'h35: pin <= { 3'b0, rx_error, 2'b0, tx_busy, rx_rdy };
+                8'h35: pin <= { 3'b0, uart_error, 2'b0, uart_busy, uart_rdy };
                 8'h80: pin <= { owner, pico_busy, LVBL, 3'b0, expired, locked }; // 8'hc0 means that the SDRAM data is ready
                 default: pin <= 0;
             endcase
@@ -407,14 +407,14 @@ jtframe_uart #(
     .uart_rx    ( uart_rx   ),
     .uart_tx    ( uart_tx   ), // serial signal to transmit. High when idle
     // Rx interface
-    .rx_data    ( rx_data   ),
-    .rx_error   ( rx_error  ),
-    .rx_rdy     ( rx_rdy    ),
-    .rx_clr     ( rx_clr    ),    // clear the rx_rdy flag
+    .rx_data    ( uart_dout ),
+    .rx_error   ( uart_error),
+    .rx_rdy     ( uart_rdy  ),
+    .rx_clr     ( uart_clr  ),    // clear the rx_rdy flag
     // Tx interface
-    .tx_busy    ( tx_busy   ),
+    .tx_busy    ( uart_busy ),
     .tx_data    ( pout      ),
-    .tx_wr      ( tx_wr     )      // write strobe
+    .tx_wr      ( uart_wr   )      // write strobe
 );
 
 jtframe_cheat_rom #(.AW(CHEATW)) u_rom(
