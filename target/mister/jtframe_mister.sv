@@ -276,9 +276,9 @@ assign shadowmask_rot = (core_mod[0] & rotate[0]) ^ status[36];
 // If JTFRAME_CHEAT is not defined, the cheat side is disabled
 // Otherwise, both can listen and talk
 assign USER_OUT = db15_en ? joy_out :
-                  uart_en ? {6'h0, uart_tx&game_tx } :
+                  uart_en ? {5'h0, 1'b1, uart_tx&game_tx } :
                   7'h7f;
-assign uart_rx  = ~uart_en | USER_IN[1];
+assign uart_rx  = uart_en ? USER_IN[1] : 1'b1;
 assign game_rx  = uart_rx;
 assign joy_in   = USER_IN;
 assign uart_en  = status[38]; // It can be used by the cheat engine or the game

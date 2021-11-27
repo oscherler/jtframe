@@ -94,29 +94,24 @@ always @(posedge clk or posedge rst) begin : rx_logic
             rx_error <= 0;
         end
 
-        if(zero) begin
+        if( zero ) begin
             if(!rx_busy && !uart_rx2) begin // look for start bit
                 rx_busy    <= 1;
-                rx_divcnt  <= (UART_DIVIDER>>1) + (UART_DIVIDER>>2); // middle bit period
+                rx_divcnt  <= UART_DIVIDER>>1; // wait middle period
                 rx_bitcnt  <= 0;
                 rx_reg     <= 0;
-            end else begin
+            end else if( rx_busy ) begin
                 rx_divcnt <= rx_divcnt==0 ? UART_DIVIDER : rx_divcnt - 1'b1;
                 if( rx_divcnt==0 ) begin // sample
                     rx_bitcnt  <= rx_bitcnt + 4'd1;
-                    rx_error   <= 1'b0;
-                    case( rx_bitcnt )
-                        0: // verify startbit
-                            if(uart_rx2) rx_busy <= 0; // it was noise
-                        9: begin // stop bit
-                            rx_busy <= 0;
-                            rx_rdy  <= 1;
-                            rx_data <= rx_reg;
-                            rx_error <= !uart_rx2; // check stop bit
-                        end
-                        default: // shift data in
-                            rx_reg <= {uart_rx2, rx_reg[7:1]};
-                    endcase
+                    if( rx_bitcnt<9 ) begin // stop bit
+                        rx_reg <= {uart_rx2, rx_reg[7:1]}; // shift data in
+                    end else begin
+                        rx_busy  <= 0;
+                        rx_rdy   <= 1;
+                        rx_data  <= rx_reg;
+                        rx_error <= !uart_rx2; // check stop bit
+                    end
                 end
             end
         end

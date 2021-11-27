@@ -320,7 +320,7 @@ always @(posedge clk) begin
                 8'h30,8'h31,8'h32,8'h33: pin <= lock_key[ paddr[1:0] ];
                 // UART
                 8'h34: begin
-                    pin <= uart_rx;
+                    pin <= rx_data;
                     uart_clr <= 1;
                 end
                 8'h35: pin <= { 3'b0, rx_error, 2'b0, tx_busy, rx_rdy };
