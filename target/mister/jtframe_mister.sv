@@ -38,6 +38,9 @@ module jtframe_mister #(parameter
     input  [ 6:0]   USER_IN,
     output [ 6:0]   USER_OUT,
     output          db15_en,
+    output          uart_en,
+    input           game_tx,
+    output          game_rx,
     output          show_osd,
     // Base video
     input [COLORW-1:0] game_r,
@@ -268,15 +271,17 @@ assign shadowmask_2x  = status[35];
 assign shadowmask_rot = (core_mod[0] & rotate[0]) ^ status[36];
 
 // UART
-`ifdef JTFRAME_UART
-    assign USER_OUT[0] = uart_tx;
-    assign USER_OUT[6:1] = 6'h3f;
-    assign uart_rx     = USER_IN[1];
-`else
-    assign uart_rx = 1;
-    assign USER_OUT = joy_out;
-    assign joy_in   = USER_IN;
-`endif
+// The core and cheat UARTs are connected in parallel
+// If JTFRAME_UART is not defined, the core side is disabled
+// If JTFRAME_CHEAT is not defined, the cheat side is disabled
+// Otherwise, both can listen and talk
+assign USER_OUT = db15_en ? joy_out :
+                  uart_en ? {6'h0, uart_tx&game_tx } :
+                  7'h7f;
+assign uart_rx  = ~uart_en | USER_IN[1];
+assign game_rx  = uart_rx;
+assign joy_in   = USER_IN;
+assign uart_en  = status[38]; // It can be used by the cheat engine or the game
 
 jtframe_resync u_resync(
     .clk        ( clk_sys       ),

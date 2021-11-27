@@ -505,6 +505,7 @@ wire [SDRAMW-1:0] bax_addr;
     assign ba_ack    = bax_ack;
     assign ba_rdy    = bax_rdy;
     assign ba_dst    = bax_dst;
+    assign uart_tx   = 1; // no signal out
     assign cheat_led = 0;
     assign dip_pause = pre_pause;
     assign st_addr   = 0;

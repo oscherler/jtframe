@@ -235,8 +235,13 @@ u_frame(
     // LED
     .game_led       ( game_led       ),
     // UART
+`ifndef JTFRAME_UART
     .uart_rx        ( UART_RX        ),
     .uart_tx        ( UART_TX        ),
+`else
+    .uart_rx        ( 1'b1           ),
+    .uart_tx        (                ),
+`endif
     // SDRAM interface
     .SDRAM_DQ       ( SDRAM_DQ       ),
     .SDRAM_A        ( SDRAM_A        ),
@@ -388,22 +393,22 @@ u_game(
     .rst         ( game_rst       ),
     // The main clock is always the same one as the SDRAM
     .clk         ( clk_rom        ),
-    `ifdef JTFRAME_CLK96
+`ifdef JTFRAME_CLK96
     .clk96       ( clk96          ),
     .rst96       ( rst96          ),
-    `endif
-    `ifdef JTFRAME_CLK48
+`endif
+`ifdef JTFRAME_CLK48
     .clk48       ( clk48          ),
     .rst48       ( rst48          ),
-    `endif
-    `ifdef JTFRAME_CLK24
+`endif
+`ifdef JTFRAME_CLK24
     .clk24       ( clk24          ),
     .rst24       ( rst24          ),
-    `endif
-    `ifdef JTFRAME_CLK6
+`endif
+`ifdef JTFRAME_CLK6
     .clk6        ( clk6           ),
     .rst6        ( rst6           ),
-    `endif
+`endif
     // Video
     .pxl2_cen    ( pxl2_cen       ),
     .pxl_cen     ( pxl_cen        ),
@@ -427,7 +432,7 @@ u_game(
     .joystick4    ( game_joy4[GAME_BUTTONS+3:0]   ),
     `endif
 
-    `ifdef JTFRAME_ANALOG
+`ifdef JTFRAME_ANALOG
     .joyana_l1    ( joyana_l1        ),
     .joyana_l2    ( joyana_l2        ),
     `ifdef JTFRAME_ANALOG_DUAL
@@ -442,7 +447,7 @@ u_game(
             .joyana_r4( joyana_r4        ),
         `endif
     `endif
-    `endif
+`endif
 
     // Sound control
     .enable_fm   ( enable_fm      ),
@@ -508,19 +513,24 @@ u_game(
     .dipsw       ( dipsw          ),
     `endif
 
+`ifdef JTFRAME_GAME_UART
+    .uart_tx     ( UART_TX        ),
+    .uart_rx     ( UART_RX        ),
+`endif
+
     // sound
-    `ifndef STEREO_GAME
+`ifndef STEREO_GAME
     .snd         ( snd_left       ),
-    `else
+`else
     .snd_left    ( snd_left       ),
     .snd_right   ( snd_right      ),
     `endif
     .sample      ( sample         ),
     // Debug
     .gfx_en      ( gfx_en         )
-    `ifdef JTFRAME_DEBUG
+`ifdef JTFRAME_DEBUG
     ,.debug_bus   ( debug_bus      )
-    `endif
+`endif
 );
 
 `ifdef SIMULATION

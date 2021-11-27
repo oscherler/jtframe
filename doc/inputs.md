@@ -53,6 +53,10 @@ Use to emulate trackball inputs with buttons. One button is used to increase the
 
 A more comprehensive trackball emulator that already instantiates internally the **jt4701** and can be easily interface with the CPU.
 
+# UART
 
+JTFRAME comes with a simple [UART interface](../hdl/jtframe_uart.v) that can serve to connect to an external computer.
 
+The UART is connected to the MIDI pins in MiST and to pins 1 (Tx) and 2 (Rx) of MiSTer USB3-connection port. By default, cores are compiled without an UART.
 
+The first use is to enable the cheat engine. That will connect an UART to the PicoBlaze CPU. In MiSTer, an OSD option will appear to enable access to the pins. As the user may have connected something else to the USB3 connector, it is important to start with that connection off. The UART access will not use the open drain connectivity for the user port, so it may break a device connected to it.
