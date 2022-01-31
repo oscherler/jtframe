@@ -58,8 +58,8 @@ module emu
     output        VGA_SCALER,
 
     //Video aspect ratio for HDMI. Most retro systems have ratio 4:3.
-    output [11:0] VIDEO_ARX,
-    output [11:0] VIDEO_ARY,
+    output [12:0] VIDEO_ARX,
+    output [12:0] VIDEO_ARY,
 
     output        LED_USER,  // 1 - ON, 0 - OFF.
 

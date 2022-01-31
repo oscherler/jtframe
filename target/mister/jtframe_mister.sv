@@ -165,8 +165,8 @@ module jtframe_mister #(parameter
     output  [ 3:0]  game_start,
     output          game_service,
     // DIP and OSD settings
-    output  [11:0]  hdmi_arx,
-    output  [11:0]  hdmi_ary,
+    output  [12:0]  hdmi_arx,
+    output  [12:0]  hdmi_ary,
     output  [ 1:0]  rotate,
 
     output          enable_fm,

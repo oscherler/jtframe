@@ -334,7 +334,7 @@ always@(posedge clk_sys) begin : uio_block
 			if(io_din == 5) ps2_key_raw <= 0;
 		end else begin
 
-			case(cmd)
+			casez(cmd)
 				`ifndef JTFRAME_NO_DB15
 				`ifndef JTFRAME_NO_DB15_OSD
 				// Reading user_io raw joy
@@ -403,13 +403,13 @@ always@(posedge clk_sys) begin : uio_block
 				'h19,
 				// send sector IO -> FPGA
 				// flag that download begins
-				'h17: begin
+				'h0?17: begin
 							sd_buff_dout <= io_din[DW:0];
 							b_wr <= 1;
 						end
 
 				// reading sd card write data
-				'h18: begin
+				'h0?18: begin
 							if(~&sd_buff_addr) sd_buff_addr <= sd_buff_addr + 1'b1;
 							io_dout <= sd_buff_din;
 						end
