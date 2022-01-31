@@ -477,6 +477,9 @@ always@(posedge clk_sys) begin
 					 3: arc2y <= io_din[11:0];
 				endcase
 			end
+`ifndef MISTER_DEBUG_NOHDMI
+			if(cmd == 'h3E) {shadowmask_wr,shadowmask_data} <= {1'b1, io_din};
+`endif
 		end
 	end
 
@@ -1040,6 +1043,33 @@ scanlines #(1) HDMI_scanlines
 	.de_out(hdmi_de_sl)
 );
 
+wire [23:0] hdmi_data_mask;
+wire        hdmi_de_mask, hdmi_vs_mask, hdmi_hs_mask;
+
+reg [15:0] shadowmask_data;
+reg        shadowmask_wr = 0;
+
+shadowmask HDMI_shadowmask
+(
+	.clk(clk_hdmi),
+	.clk_sys(clk_sys),
+
+	.cmd_wr(shadowmask_wr),
+	.cmd_in(shadowmask_data),
+
+	.din(dis_output ? 24'd0 : hdmi_data),
+	.hs_in(hdmi_hs),
+	.vs_in(hdmi_vs),
+	.de_in(hdmi_de),
+	.brd_in(hdmi_brd),
+	.enable(~LFB_EN),
+
+	.dout(hdmi_data_mask),
+	.hs_out(hdmi_hs_mask),
+	.vs_out(hdmi_vs_mask),
+	.de_out(hdmi_de_mask)
+);
+
 wire [23:0] hdmi_data_osd;
 wire        hdmi_de_osd, hdmi_vs_osd, hdmi_hs_osd;
 
@@ -1052,10 +1082,10 @@ osd hdmi_osd
 	.io_din(io_din),
 
 	.clk_video(clk_hdmi),
-	.din(hdmi_data_sl),
-	.hs_in(hdmi_hs_sl),
-	.vs_in(hdmi_vs_sl),
-	.de_in(hdmi_de_sl),
+	.din(hdmi_data_mask),
+	.hs_in(hdmi_hs_mask),
+	.vs_in(hdmi_vs_mask),
+	.de_in(hdmi_de_mask),
 
 	.dout(hdmi_data_osd),
 	.hs_out(hdmi_hs_osd),
@@ -1462,7 +1492,10 @@ emu emu
 (
 	.CLK_50M(FPGA_CLK2_50),
 	.RESET(reset),
-	.HPS_BUS({f1, HDMI_TX_VS, clk_100m, clk_ihdmi, ce_hpix, hde_emu, hhs_fix, hvs_fix, io_wait, clk_sys, io_fpga, io_uio, io_strobe, io_wide, io_din, io_dout}),
+	.HPS_BUS({scanlines,f1, HDMI_TX_VS,
+				clk_100m, clk_ihdmi,
+				ce_hpix, hde_emu, hhs_fix, hvs_fix,
+				io_wait, clk_sys, io_fpga, io_uio, io_strobe, io_wide, io_din, io_dout}),
 
 	.VGA_R(r_out),
 	.VGA_G(g_out),

@@ -30,7 +30,7 @@ module jtframe_mister #(parameter
     input           pll_locked,
     // interface with microcontroller
     output [63:0]   status,
-    inout  [45:0]   HPS_BUS,
+    inout  [47:0]   HPS_BUS,
     output [ 1:0]   buttons,
     // LED
     input  [ 1:0]   game_led,
