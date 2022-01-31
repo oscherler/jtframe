@@ -1089,8 +1089,6 @@ cyclonev_hps_interface_peripheral_i2c hdmi_i2c
 );
 
 `ifndef MISTER_DEBUG_NOHDMI
-wire [23:0] hdmi_data_sl;
-wire        hdmi_de_sl, hdmi_vs_sl, hdmi_hs_sl;
 
 `ifdef MISTER_FB
 reg dis_output;
@@ -1525,12 +1523,12 @@ assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQM
 
 assign clk_ihdmi= clk_vid;
 assign ce_hpix  = ce_pix;
-assign hr_out   = r_out;
-assign hg_out   = g_out;
-assign hb_out   = b_out;
-assign hhs_fix  = hs_fix;
-assign hvs_fix  = vs_fix;
-assign hde_emu  = de_emu;
+assign hr_out   = vga_data_sl[23:16];
+assign hg_out   = vga_data_sl[15:8];
+assign hb_out   = vga_data_sl[7:0];
+assign hhs_fix  = vga_hs_sl;
+assign hvs_fix  = vga_vs_sl;
+assign hde_emu  = vga_de_sl;
 
 `ifdef ARCADE_SYS
 	assign audio_mix = 0;
@@ -1576,9 +1574,9 @@ emu emu
 	.CLK_50M(FPGA_CLK2_50),
 	.RESET(reset),
 	.HPS_BUS({scanlines,f1, HDMI_TX_VS,
-				clk_100m, clk_ihdmi,
-				ce_hpix, hde_emu, hhs_fix, hvs_fix,
-				io_wait, clk_sys, io_fpga, io_uio, io_strobe, io_wide, io_din, io_dout}),
+				 clk_100m, clk_ihdmi,
+				 ce_hpix, hde_emu, hhs_fix, hvs_fix,
+				 io_wait, clk_sys, io_fpga, io_uio, io_strobe, io_wide, io_din, io_dout}),
 
 	.VGA_R(r_out),
 	.VGA_G(g_out),
