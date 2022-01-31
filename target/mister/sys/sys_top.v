@@ -651,7 +651,7 @@ wire  [15:0] vbuf_byteenable;
 wire         vbuf_write;
 
 wire  [23:0] hdmi_data;
-wire         hdmi_vs, hdmi_hs, hdmi_de, hdmi_vbl;
+wire         hdmi_vs, hdmi_hs, hdmi_de, hdmi_vbl, hdmi_brd;
 
 `ifndef DEBUG_NOHDMI
 wire clk_hdmi  = hdmi_clk_out;
@@ -695,6 +695,7 @@ ascal
 	.o_vs     (hdmi_vs),
 	.o_de     (hdmi_de),
 	.o_vbl    (hdmi_vbl),
+	.o_brd    (hdmi_brd),
 	.o_lltune (lltune),
 	.htotal   (WIDTH + HFP + HBP + HS),
 	.hsstart  (WIDTH + HFP),
