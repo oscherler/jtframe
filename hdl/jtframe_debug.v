@@ -133,6 +133,8 @@ initial begin
     font[4'd15] = 25'b11111_10000_11110_10000_10000;
 end
 
+
+reg       display_bit;
 reg [3:0] display_nibble;
 reg [4:0] font_pixel;
 
@@ -145,11 +147,14 @@ always @* begin
             rout[COLORW-1:COLORW-2] = {2{debug_bus[ ~hcnt[5:3] ]}};
             gout[COLORW-1:COLORW-2] = {2{debug_bus[ ~hcnt[5:3] ]}};
             bout[COLORW-1:COLORW-2] = {2{debug_bus[ ~hcnt[5:3] ]}};
-            if( hcnt[2:0]==4 || vcnt[2:0]==4 ) begin // always mark the center with a cross
-                rout[COLORW-1:COLORW-2] = 2'b11;
-                gout[COLORW-1:COLORW-2] = 2'b11;
-                bout[COLORW-1:COLORW-2] = 2'b11;
-            end
+        end
+        if( hcnt[2:0] >= 2 && hcnt[2:0] < 7 && vcnt[2:0] >= 2 && vcnt[2:0] < 7 ) begin
+            display_bit = debug_bus[ ~hcnt[5:3] ];
+            font_pixel = ( vcnt[2:0] - 2 ) * 5 + ( hcnt[2:0] - 2 );
+            
+            rout[COLORW-1:COLORW-2] = {2{ font[ display_bit ][ font_pixel ] ^ display_bit }};
+            gout[COLORW-1:COLORW-2] = {2{ font[ display_bit ][ font_pixel ] ^ display_bit }};
+            bout[COLORW-1:COLORW-2] = {2{ font[ display_bit ][ font_pixel ] ^ display_bit }};
         end
     end
 
@@ -158,11 +163,14 @@ always @* begin
             rout[COLORW-1:COLORW-2] = {2{debug_view[ ~hcnt[5:3] ]}};
             gout[COLORW-1:COLORW-2] = {2{debug_view[ ~hcnt[5:3] ]}};
             bout[COLORW-1:COLORW-2] = {2{debug_view[ ~hcnt[5:3] ]}};
-            if( hcnt[2:0]==4 || vcnt[2:0]==4 ) begin // always mark the center with a cross
-                rout[COLORW-1:COLORW-2] = 2'b11;
-                gout[COLORW-1:COLORW-2] = 2'b11;
-                bout[COLORW-1:COLORW-2] = 2'b11;
-            end
+        end
+        if( hcnt[2:0] >= 2 && hcnt[2:0] < 7 && vcnt[2:0] >= 2 && vcnt[2:0] < 7 ) begin
+            display_bit = debug_view[ ~hcnt[5:3] ];
+            font_pixel = ( vcnt[2:0] - 2 ) * 5 + ( hcnt[2:0] - 2 );
+            
+            rout[COLORW-1:COLORW-2] = {2{ font[ display_bit ][ font_pixel ] ^ display_bit }};
+            gout[COLORW-1:COLORW-2] = {2{ font[ display_bit ][ font_pixel ] ^ display_bit }};
+            bout[COLORW-1:COLORW-2] = {2{ font[ display_bit ][ font_pixel ] ^ display_bit }};
         end
     end
 
